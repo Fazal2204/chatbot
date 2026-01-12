@@ -1,0 +1,132 @@
+/* Reset + global */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  font-family: "Inter", system-ui, sans-serif;
+  background: #f9fafb;
+  color: #1f2937;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Full-page container */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+/* Header bar */
+.header {
+  background: #1e3a8a;
+  color: white;
+  padding: 20px 30px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.header p {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-top: 4px;
+}
+
+/* Chat area fills remaining space */
+.chat-box {
+  flex: 1;
+  overflow-y: auto;
+  background: #f8fafc;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+}
+
+/* Messages */
+.msg {
+  max-width: 65%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.5;
+  animation: fadeIn 0.25s ease;
+}
+
+.msg.user {
+  align-self: flex-end;
+  background: #2563eb;
+  color: white;
+  border-bottom-right-radius: 2px;
+}
+
+.msg.bot {
+  align-self: flex-start;
+  background: #e5e7eb;
+  border-bottom-left-radius: 2px;
+}
+
+/* Input area fixed at bottom */
+.input-bar {
+  display: flex;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+  position: sticky;
+  bottom: 0;
+}
+
+.input-bar input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.input-bar input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.input-bar button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  margin-left: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.input-bar button:hover {
+  background: #1e40af;
+  transform: translateY(-1px);
+}
+
+.input-bar button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
