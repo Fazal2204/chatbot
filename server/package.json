@@ -1,19 +1,17 @@
 {
-  "name": "server",
+  "name": "superset-chatbot-backend",
   "version": "1.0.0",
   "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
+  "description": "Backend for the Superset / IPP chatbot using Gemini 2.5 Flash",
   "license": "ISC",
-  "description": "Backend for the college chatbot",
   "dependencies": {
+    "express": "^4.19.2",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "openai": "^6.7.0"
+    "dotenv": "^16.4.5",
+    "@google/generative-ai": "^0.21.0"
   }
 }
