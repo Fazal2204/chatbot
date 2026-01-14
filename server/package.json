@@ -8,6 +8,9 @@
   },
   "description": "Backend for the Superset / IPP chatbot using Gemini 2.5 Flash",
   "license": "ISC",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "express": "^4.19.2",
     "cors": "^2.8.5",
