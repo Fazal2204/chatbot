@@ -15,11 +15,12 @@ app.use(cors());
 app.use(express.json());
 
 /*
-  ✅ ONLY MODEL THAT WORKS RELIABLY WITH JS SDK (v1beta)
+  ✅ MOST COMPATIBLE MODEL
+  Works on v1beta for almost all projects
 */
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-pro-latest"
+  model: "gemini-1.0-pro"
 });
 
 const supersetDoc = `
@@ -67,7 +68,7 @@ app.post("/api/chat", async (req, res) => {
 
     if (err.status === 429) {
       return res.status(429).json({
-        error: "AI is busy. Please wait a minute and try again."
+        error: "AI is busy. Please wait and try again."
       });
     }
 
