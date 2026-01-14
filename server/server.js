@@ -12,50 +12,64 @@ if (!process.env.GEMINI_API_KEY) {
 
 const app = express();
 
-/* 🚨 TEMPORARY: ALLOW ALL ORIGINS (DEBUG MODE) */
+/* Allow GitHub Pages */
 app.use(cors());
 app.use(express.json());
 
+/* Gemini setup — STABLE MODEL */
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const model = genAI.getGenerativeModel({
+  model: "gemini-1.5-flash"
+});
 
+/* Context */
 const supersetDoc = `
 Internship Preparation Program (IPP) is mandatory before Superset access.
-Superset is Ashoka University’s official internship and placement platform.
+Superset is Ashoka University’s official internship & placement platform.
+Resumes must be verified and one page long.
+Minimum internship duration is 30 days.
 `;
 
+/* Memory */
 const chatHistory = {};
 
+/* Routes */
 app.get("/", (req, res) => {
-  res.send("Backend running");
+  res.send("Superset chatbot backend running");
 });
 
 app.post("/api/chat", async (req, res) => {
-  console.log("📩 Incoming request:", req.body);
-
   try {
     const { message, sessionId } = req.body;
 
     if (!message || !sessionId) {
-      return res.status(400).json({ error: "Missing message or sessionId" });
+      return res.status(400).json({
+        error: "message and sessionId are required"
+      });
     }
 
     if (!chatHistory[sessionId]) {
       chatHistory[sessionId] = [
-        `Answer ONLY using this document:\n${supersetDoc}`
+        `Answer ONLY using the document below:\n${supersetDoc}`
       ];
     }
 
     chatHistory[sessionId].push(`User: ${message}`);
 
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: chatHistory[sessionId].join("\n") }] }]
-    });
+    const prompt = chatHistory[sessionId].join("\n");
 
-    const reply = result.response.text();
+    const result = await model.generateContent(prompt);
+
+    const reply =
+      result?.response?.text()?.trim() ||
+      "Sorry, I could not generate a response.";
+
+    chatHistory[sessionId].push(`Assistant: ${reply}`);
+
     res.json({ reply });
   } catch (err) {
-    console.error("🔥 BACKEND ERROR:", err);
+    console.error("🔥 GEMINI ERROR:", err);
+
     res.status(500).json({
       error: "Backend failed",
       details: err.message
