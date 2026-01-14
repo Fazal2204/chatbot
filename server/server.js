@@ -1,84 +1,111 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 
 dotenv.config();
 
-if (!process.env.GEMINI_API_KEY) {
-  console.error("❌ GEMINI_API_KEY missing");
+/* ---------- ENV CHECK ---------- */
+if (!process.env.OPENAI_API_KEY) {
+  console.error("❌ OPENAI_API_KEY missing");
   process.exit(1);
 }
 
+/* ---------- APP SETUP ---------- */
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-/*
-  ✅ MOST COMPATIBLE MODEL
-  Works on v1beta for almost all projects
-*/
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({
-  model: "gemini-1.0-pro"
+/* ---------- OPENAI CLIENT ---------- */
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
+/* ---------- CONTEXT DOCUMENT ---------- */
 const supersetDoc = `
-Internship Preparation Program (IPP) is mandatory before Superset access.
-Superset is Ashoka University’s official internship and placement platform.
-Resume must be one page and verified.
-Minimum internship duration is 30 days.
+Internship Preparation Program (IPP)
+• IPP is mandatory before Superset access.
+• Superset is Ashoka University’s official internship & placement platform.
+• Resume must be one page and verified.
+• Minimum internship duration is 30 days.
+• Coursera certificates are accepted.
+• Verification takes up to 48 hours.
 `;
 
+/* ---------- SESSION MEMORY ---------- */
 const chatHistory = {};
 
+/* ---------- ROUTES ---------- */
+
+// Root
 app.get("/", (req, res) => {
-  res.send("Superset chatbot backend running");
+  res.send("✅ Superset Chatbot Backend (OpenAI) running");
 });
 
+// Health
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", provider: "openai" });
+});
+
+// Chat
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, sessionId } = req.body;
 
     if (!message || !sessionId) {
       return res.status(400).json({
-        error: "message and sessionId are required"
+        error: "message and sessionId are required",
       });
     }
 
     if (!chatHistory[sessionId]) {
       chatHistory[sessionId] = [
-        `Answer ONLY using the document below:\n${supersetDoc}`
+        {
+          role: "system",
+          content:
+            "You are an assistant for Ashoka University students. " +
+            "Answer ONLY using the following document:\n\n" +
+            supersetDoc,
+        },
       ];
     }
 
-    chatHistory[sessionId].push(`User: ${message}`);
-    const prompt = chatHistory[sessionId].join("\n");
+    chatHistory[sessionId].push({
+      role: "user",
+      content: message,
+    });
 
-    const result = await model.generateContent(prompt);
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: chatHistory[sessionId],
+      temperature: 0.2,
+    });
 
-    const reply =
-      result?.response?.text()?.trim() ||
-      "Sorry, I could not generate a response.";
+    const reply = completion.choices[0].message.content.trim();
 
-    chatHistory[sessionId].push(`Assistant: ${reply}`);
+    chatHistory[sessionId].push({
+      role: "assistant",
+      content: reply,
+    });
+
     res.json({ reply });
   } catch (err) {
-    console.error("🔥 GEMINI ERROR:", err);
+    console.error("🔥 OPENAI ERROR:", err);
 
     if (err.status === 429) {
       return res.status(429).json({
-        error: "AI is busy. Please wait and try again."
+        error: "AI is busy. Please wait and try again.",
       });
     }
 
     res.status(500).json({
       error: "Backend failed",
-      details: err.message
+      details: err.message,
     });
   }
 });
 
+/* ---------- START SERVER ---------- */
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
