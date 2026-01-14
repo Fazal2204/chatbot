@@ -1,13 +1,13 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 
 dotenv.config();
 
 /* ---------- ENV CHECK ---------- */
-if (!process.env.OPENAI_API_KEY) {
-  console.error("❌ OPENAI_API_KEY missing");
+if (!process.env.GROQ_API_KEY) {
+  console.error("❌ GROQ_API_KEY missing");
   process.exit(1);
 }
 
@@ -16,9 +16,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* ---------- OPENAI CLIENT ---------- */
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+/* ---------- GROQ CLIENT ---------- */
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 /* ---------- CONTEXT DOCUMENT ---------- */
@@ -39,12 +39,12 @@ const chatHistory = {};
 
 // Root
 app.get("/", (req, res) => {
-  res.send("✅ Superset Chatbot Backend (OpenAI) running");
+  res.send("✅ Superset Chatbot Backend (Groq) running");
 });
 
 // Health
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", provider: "openai" });
+  res.json({ status: "ok", provider: "groq" });
 });
 
 // Chat
@@ -75,8 +75,8 @@ app.post("/api/chat", async (req, res) => {
       content: message,
     });
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+    const completion = await groq.chat.completions.create({
+      model: "llama3-8b-8192",
       messages: chatHistory[sessionId],
       temperature: 0.2,
     });
@@ -90,13 +90,7 @@ app.post("/api/chat", async (req, res) => {
 
     res.json({ reply });
   } catch (err) {
-    console.error("🔥 OPENAI ERROR:", err);
-
-    if (err.status === 429) {
-      return res.status(429).json({
-        error: "AI is busy. Please wait and try again.",
-      });
-    }
+    console.error("🔥 GROQ ERROR:", err);
 
     res.status(500).json({
       error: "Backend failed",
