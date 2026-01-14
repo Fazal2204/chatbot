@@ -3,9 +3,14 @@ import axios from "axios";
 import { Send } from "lucide-react";
 import "./index.css";
 
+const API_BASE = "https://superset-chatbot-backend.onrender.com";
+
 function App() {
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Hey! 👋 I'm the Superset Help Assistant. Ask me anything about IPP, resumes, or internships." },
+    {
+      sender: "bot",
+      text: "Hey! 👋 I'm the Superset Help Assistant. Ask me anything about IPP, resumes, or internships."
+    }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -15,35 +20,41 @@ function App() {
   useEffect(() => {
     chatRef.current?.scrollTo({
       top: chatRef.current.scrollHeight,
-      behavior: "smooth",
+      behavior: "smooth"
     });
   }, [messages]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-    const userMessage = { sender: "user", text: input };
-    setMessages((prev) => [...prev, userMessage]);
+
+    setMessages(prev => [...prev, { sender: "user", text: input }]);
     setInput("");
     setIsLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5050/api/chat", {
+      const response = await axios.post(`${API_BASE}/api/chat`, {
         message: input,
-        sessionId: sessionId.current,
+        sessionId: sessionId.current
       });
-      const botReply = response.data.reply || "Sorry, I didn’t catch that.";
-      setMessages((prev) => [...prev, { sender: "bot", text: botReply }]);
-    } catch {
-      setMessages((prev) => [
+
+      setMessages(prev => [
         ...prev,
-        { sender: "bot", text: "⚠️ Something went wrong. Please try again later." },
+        { sender: "bot", text: response.data.reply }
+      ]);
+    } catch {
+      setMessages(prev => [
+        ...prev,
+        {
+          sender: "bot",
+          text: "⚠️ Something went wrong. Please try again later."
+        }
       ]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = e => {
     if (e.key === "Enter" && !isLoading) sendMessage();
   };
 
@@ -67,7 +78,7 @@ function App() {
         <input
           type="text"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask me something about Superset or IPP..."
         />
