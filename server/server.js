@@ -32,22 +32,26 @@ Internship Preparation Program (IPP)
 • Verification takes up to 48 hours.
 `;
 
-/* ---------- SESSION MEMORY ---------- */
+/* ---------- IN-MEMORY CHAT HISTORY ---------- */
 const chatHistory = {};
 
 /* ---------- ROUTES ---------- */
 
 // Root
 app.get("/", (req, res) => {
-  res.send("✅ Superset Chatbot Backend (Groq) running");
+  res.send("✅ Superset Chatbot Backend (Groq + Llama-3.3-70B) running");
 });
 
-// Health
+// Health check
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", provider: "groq" });
+  res.json({
+    status: "ok",
+    provider: "groq",
+    model: "llama-3.3-70b-versatile",
+  });
 });
 
-// Chat
+// Chat endpoint
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, sessionId } = req.body;
@@ -76,7 +80,7 @@ app.post("/api/chat", async (req, res) => {
     });
 
     const completion = await groq.chat.completions.create({
-      model: "llama3-8b-8192",
+      model: "llama-3.3-70b-versatile",
       messages: chatHistory[sessionId],
       temperature: 0.2,
     });
@@ -91,6 +95,12 @@ app.post("/api/chat", async (req, res) => {
     res.json({ reply });
   } catch (err) {
     console.error("🔥 GROQ ERROR:", err);
+
+    if (err.status === 400) {
+      return res.status(400).json({
+        error: "Invalid request or model access not enabled for this account.",
+      });
+    }
 
     res.status(500).json({
       error: "Backend failed",
