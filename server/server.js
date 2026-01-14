@@ -4,8 +4,6 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import fs from "fs";
-import path from "path";
 
 dotenv.config();
 
@@ -18,9 +16,19 @@ if (!process.env.GEMINI_API_KEY) {
 /* -------------------- EXPRESS SETUP -------------------- */
 const app = express();
 
+/*
+  ✅ FIXED CORS CONFIG FOR GITHUB PAGES
+  GitHub Pages origin is ALWAYS https://<username>.github.io
+  (repo name does NOT matter for origin)
+*/
 app.use(
   cors({
-    origin: process.env.FRONTEND_ORIGIN
+    origin: [
+      "https://Fazal2204.github.io",
+      "https://fazal2204.github.io"
+    ],
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"]
   })
 );
 
@@ -35,50 +43,17 @@ const model = genAI.getGenerativeModel({
 /* -------------------- DOCUMENT CONTEXT -------------------- */
 const supersetDoc = `
 Internship Preparation Program (IPP)
-• The Internship Preparation Program (IPP) is the first step before accessing Superset.
-• IPP trains students in resume building, interview preparation, and professional communication.
-• Participation in IPP is mandatory for internships and placements.
-• Only students who complete IPP successfully receive Superset login credentials.
-
-About Superset
-• Superset is Ashoka University’s official internship and placement management platform.
-• It is managed by the Career Development Office (CDO).
-• All recruiter-facing data is verified.
-
-Resume Rules
-• Resume must be one page.
-• Only verified experiences allowed.
-• Incorrect or outdated CGPA may lead to blacklisting.
-
-Internships
-• Minimum duration: 30 days.
-• Virtual simulators do not count.
+• IPP is mandatory before accessing Superset.
+• Superset is Ashoka University’s internship & placement platform.
+• Only verified data is shared with recruiters.
+• Resume must be one page and factually correct.
+• Minimum internship duration: 30 days.
 • Coursera certificates are allowed.
-
-Verification
-• Proofs are mandatory.
-• Verification takes up to 48 hours.
-• Inconsistencies delay approval.
+• Proof verification takes up to 48 hours.
 `;
 
 /* -------------------- CHAT MEMORY -------------------- */
 const chatHistory = {};
-
-/* -------------------- LOGGING (SAFE FOR RENDER) -------------------- */
-const logDir = path.join(process.cwd(), "logs");
-if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
-const logFile = path.join(logDir, "chat_history.log");
-
-function logChat(sessionId, userMsg, aiReply) {
-  const entry = `
-[${new Date().toISOString()}]
-Session: ${sessionId}
-User: ${userMsg}
-AI: ${aiReply}
---------------------------------------
-`;
-  fs.appendFileSync(logFile, entry);
-}
 
 /* -------------------- ROUTES -------------------- */
 
@@ -87,7 +62,7 @@ app.get("/", (req, res) => {
   res.send("✅ Superset Chatbot Backend is running");
 });
 
-// Health
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
@@ -96,7 +71,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Chat
+// Chat API
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, sessionId } = req.body;
@@ -110,15 +85,14 @@ app.post("/api/chat", async (req, res) => {
     if (!chatHistory[sessionId]) {
       chatHistory[sessionId] = [
         `You are an AI assistant for Ashoka University students.
-Answer ONLY using the following document:
+Answer ONLY using this document:
 
 ${supersetDoc}
 
 Rules:
-1. If unrelated, say you can only answer Superset/IPP questions.
+1. Only answer Superset/IPP related queries.
 2. Be factual and concise.
-3. Do not invent policies.
-4. If not mentioned, say you do not have that information.`
+3. If information is missing, say so.`
       ];
     }
 
@@ -134,7 +108,6 @@ Rules:
       "Sorry, I could not generate a response.";
 
     chatHistory[sessionId].push(`Assistant: ${reply}`);
-    logChat(sessionId, message, reply);
 
     res.json({ reply });
   } catch (err) {
