@@ -32,22 +32,45 @@ function App() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE}/api/chat`, {
-        message: input,
-        sessionId: sessionId.current
-      });
+      const response = await axios.post(
+        `${API_BASE}/api/chat`,
+        {
+          message: input,
+          sessionId: sessionId.current
+        },
+        {
+          headers: {
+            "Content-Type": "application/json"
+          },
+          timeout: 15000
+        }
+      );
 
       setMessages(prev => [
         ...prev,
         { sender: "bot", text: response.data.reply }
       ]);
-    } catch {
+    } catch (error) {
+      console.error("❌ API ERROR:", error);
+
+      let errorText = "Unknown error";
+
+      if (error.response) {
+        // Backend responded with error
+        errorText = `Error ${error.response.status}: ${
+          error.response.data?.error ||
+          JSON.stringify(error.response.data)
+        }`;
+      } else if (error.request) {
+        // Request sent but no response (CORS / network)
+        errorText = "No response from backend (network or CORS issue)";
+      } else {
+        errorText = error.message;
+      }
+
       setMessages(prev => [
         ...prev,
-        {
-          sender: "bot",
-          text: "⚠️ Something went wrong. Please try again later."
-        }
+        { sender: "bot", text: `⚠️ ${errorText}` }
       ]);
     } finally {
       setIsLoading(false);
