@@ -14,15 +14,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* ✅ GEMINI PRO (YOU HAVE QUOTA FOR THIS) */
+/*
+  ✅ ONLY MODEL THAT WORKS RELIABLY WITH JS SDK (v1beta)
+*/
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
-  model: "gemini-pro"
+  model: "gemini-1.5-pro-latest"
 });
 
 const supersetDoc = `
 Internship Preparation Program (IPP) is mandatory before Superset access.
-Superset is Ashoka University’s official internship & placement platform.
+Superset is Ashoka University’s official internship and placement platform.
 Resume must be one page and verified.
 Minimum internship duration is 30 days.
 `;
