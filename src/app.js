@@ -3,6 +3,7 @@ import axios from "axios";
 import { Send } from "lucide-react";
 import "./index.css";
 
+/* ✅ BACKEND URL (Render) */
 const API_BASE = "https://superset-chatbot-backend.onrender.com";
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
   const chatRef = useRef(null);
   const sessionId = useRef(`session_${Date.now()}`);
 
+  /* Auto-scroll */
   useEffect(() => {
     chatRef.current?.scrollTo({
       top: chatRef.current.scrollHeight,
@@ -25,9 +27,11 @@ function App() {
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
 
-    setMessages(prev => [...prev, { sender: "user", text: input }]);
+    const userText = input;
+
+    setMessages(prev => [...prev, { sender: "user", text: userText }]);
     setInput("");
     setIsLoading(true);
 
@@ -35,42 +39,36 @@ function App() {
       const response = await axios.post(
         `${API_BASE}/api/chat`,
         {
-          message: input,
+          message: userText,
           sessionId: sessionId.current
         },
         {
-          headers: {
-            "Content-Type": "application/json"
-          },
-          timeout: 15000
+          headers: { "Content-Type": "application/json" },
+          timeout: 20000
         }
       );
 
       setMessages(prev => [
         ...prev,
-        { sender: "bot", text: response.data.reply }
+        {
+          sender: "bot",
+          text: response.data.reply || "No response received."
+        }
       ]);
     } catch (error) {
-      console.error("❌ API ERROR:", error);
+      console.error("❌ Frontend API error:", error);
 
-      let errorText = "Unknown error";
+      let errorMsg = "Something went wrong. Please try again.";
 
-      if (error.response) {
-        // Backend responded with error
-        errorText = `Error ${error.response.status}: ${
-          error.response.data?.error ||
-          JSON.stringify(error.response.data)
-        }`;
+      if (error.response?.data?.error) {
+        errorMsg = error.response.data.error;
       } else if (error.request) {
-        // Request sent but no response (CORS / network)
-        errorText = "No response from backend (network or CORS issue)";
-      } else {
-        errorText = error.message;
+        errorMsg = "Cannot reach server. Please try again later.";
       }
 
       setMessages(prev => [
         ...prev,
-        { sender: "bot", text: `⚠️ ${errorText}` }
+        { sender: "bot", text: `⚠️ ${errorMsg}` }
       ]);
     } finally {
       setIsLoading(false);
@@ -78,14 +76,14 @@ function App() {
   };
 
   const handleKeyDown = e => {
-    if (e.key === "Enter" && !isLoading) sendMessage();
+    if (e.key === "Enter") sendMessage();
   };
 
   return (
     <div className="page">
       <div className="header">
         <h1>Superset Help Assistant 💬</h1>
-        <p>Your guide to internships, IPP, and placements at Ashoka University</p>
+        <p>Your guide to internships, IPP, and placements</p>
       </div>
 
       <div className="chat-box" ref={chatRef}>
@@ -94,7 +92,7 @@ function App() {
             {msg.text}
           </div>
         ))}
-        {isLoading && <div className="msg bot typing">...</div>}
+        {isLoading && <div className="msg bot">Typing...</div>}
       </div>
 
       <div className="input-bar">
@@ -103,7 +101,7 @@ function App() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask me something about Superset or IPP..."
+          placeholder="Ask something about Superset or IPP..."
         />
         <button onClick={sendMessage} disabled={isLoading}>
           <Send size={18} />
