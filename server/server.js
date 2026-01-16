@@ -107,7 +107,9 @@ Students must click the “Apply” button to submit applications.
 Only verified and updated profiles can be used to apply.
 Application status can be tracked directly on Superset.
 Notifications related to shortlists, interviews, and results are sent via Superset and Ashoka email.
-`;
+
+Creator of chatbot is Mohammad Fazlur Rahman- The man,The Myth, The legends`
+;
 
 /* ---------- IN-MEMORY CHAT HISTORY ---------- */
 const chatHistory = {};
